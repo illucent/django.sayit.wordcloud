@@ -1,0 +1,285 @@
+{% load staticfiles %}{% load url from future %}{% load i18n %}{% load compressed %}<!DOCTYPE html>
+<html class="no-js">
+    <head>
+        <title>{% block fulltitle %}{% block title %}{{ title }}{% endblock %}
+          {% if request.instance %}
+            :: {% filter force_escape %}{% firstof request.instance.title request.instance.label %}{% endfilter %}
+          {% endif %}
+            :: {% trans "SayIt" %}{% endblock %}</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        {% block opengraph %}
+          <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}">
+          <meta property="og:title" content="{% block og_title %}{% if title %}{{ title }} ::{% endif %}{% if request.instance %}{% filter force_escape %}{% firstof request.instance.title request.instance.label %}{% endfilter %} :: {% endif %}{% trans "SayIt" %}{% endblock %}">
+          <meta property="og:site_name" content="{% block og_site_name %}{% trans "SayIt" %}{% endblock %}">
+          <meta property="og:description" content="{% block og_description %}{% trans "Transcripts for the modern internet" %}{% endblock %}">
+          <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+          <meta property="og:image" content="{% block og_image %}http{% if request.is_secure %}s{% endif %}://{{ request.get_host }}{% static "speeches/img/apple-touch-icon-152x152.png" %}{% endblock %}">
+
+          {% block og_image_details %}
+            <meta property="og:image:type" content="{% block og_image_type %}image/png{% endblock %}">
+            {% block og_image_dimensions %}
+              <meta property="og:image:width" content="{% block og_image_width %}152{% endblock %}">
+              <meta property="og:image:height" content="{% block og_image_height %}152{% endblock %}">
+            {% endblock og_image_dimensions %}
+          {% endblock og_image_details %}
+        {% endblock opengraph %}
+
+        {% if 'sayit.staging.mysociety.org' in request.get_host %}
+            {% if request.instance %}
+                <link rel="canonical" href="http://{{ request.instance.label }}.sayit.mysociety.org{{ request.get_full_path }}">
+            {% else %}
+                <link rel="canonical" href="http://sayit.mysociety.org{{ request.get_full_path }}">
+            {% endif %}
+        {% endif %}
+
+        <link rel="icon" type="image/png" href="{% static "img/favicon-128.png" %}">
+		<link href="{% static "img/apple-touch-icon.png" %}" rel="apple-touch-icon" />
+        <link href="{% static "img/apple-touch-icon-76x76.png" %}" rel="apple-touch-icon" sizes="76x76" />
+        <link href="{% static "img/apple-touch-icon-120x120.png" %}" rel="apple-touch-icon" sizes="120x120" />
+        <link href="{% static "img/apple-touch-icon-152x152.png" %}" rel="apple-touch-icon" sizes="152x152" />
+        {% block extra_headers %}{% endblock %}
+
+        {% block extra_css %}
+        {% if request.instance.label == 'shakespeare' %}
+            {% compressed_css 'sayit-shakespeare' %}
+        {% elif request.instance.label == 'labour-speeches' %}
+            {% compressed_css 'sayit-labour' %}
+        {% elif request.instance.label == 'conservative-speeches' %}
+            {% compressed_css 'sayit-conservative' %}
+        {% else %}
+            {% compressed_css 'sayit-default' %}
+        {% endif %}
+        <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic' rel='stylesheet' type='text/css'>
+        {% endblock extra_css %}
+        
+        <script>
+            var docEl = document.documentElement;
+            docEl.className = docEl.className.replace(/\bno-js\b/,'') + ' js';
+        </script>
+		<script src="//www.jasondavies.com/d3.min.js"></script>
+		<script src="//devfiles-devtechillucent.rhcloud.com/wordcloud_JS/d3.layout.cloud.js"></script>
+        {% compressed_js 'sayit-default-head' %}
+        <script src="{% static "javascripts/vendor/custom.modernizr.js" %}"></script>
+        {% block extra_js_head %}{% endblock %}
+        {% if settings.GOOGLE_ANALYTICS_ACCOUNT %}
+        <script type="text/javascript">
+
+          var _gaq = _gaq || [];
+          _gaq.push(['_setAccount', '{{ settings.GOOGLE_ANALYTICS_ACCOUNT }}']);
+          _gaq.push (['_gat._anonymizeIp']);
+          _gaq.push(['_setDomainName', 'sayit.mysociety.org']);
+          _gaq.push(['_trackPageview']);
+
+          (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+          })();
+        </script>
+        {% endif %}
+
+    </head>
+
+    <body class="{% block body_class %}{% endblock %}" id="top">
+
+      {% if settings.DEBUG %}
+			<!-- temporary hide
+            <div data-alert class="alert-box alert-box--header">
+              {% trans "This is a staging site &ndash; any data saved here <strong>may be deleted</strong>." %}
+              <a href="#" class="close">&times;</a>
+            </div> -->
+      {% endif %}
+      <div class="ms-header">
+          <nav class="ms-header__row">
+             <!--<a class="ms-header__logo" href="http://www.mysociety.org">mySociety</a>-->
+          </nav>
+      </div>
+      <header class="brand-header">
+        <div class="brand-header__row">
+          <div class="brand-header__title-unit">
+              <h1 class="brand-header__title"><a href="{{ BASE_URL }}">{% trans "SayIt" %} <span class="subtitle js-typewriter">&mdash; {% trans "Modern transcripts" %}</span></a></h1>
+          </div>
+          <nav class="brand-header__navigation">
+            <a href="{{ BASE_URL }}/about/questions">{% trans 'About' %}</a>
+            <!--<a href="{{ BASE_URL }}/about/community">{% trans 'Contact' %}</a>-->
+            <a href="{{ BASE_URL }}/instances/add">{% trans 'Create New SayIt' %}</a>
+            {% if request.user.is_authenticated %}
+              <a href="#" data-dropdown="user-menu" class="dropdown">{{ request.user.username }}</a>
+              <ul id="user-menu" class="f-dropdown" data-dropdown-content>
+                  <li><a href="{{ BASE_URL }}/accounts/profile/">{% trans "Your Instances" %}</a>
+                  <li><a href="{% url 'account_logout' %}?next=/">{% trans "Log out" %}</a></li>
+              </ul>
+            {% else %}
+              <a href="{% url 'account_login' %}">{% trans 'Log in' %}</a>
+                {% if request.instance %}
+                  <a href="{{ BASE_URL }}/#demos">{% trans "Other SayIt sites" %}</a>
+                {% endif %}
+            {% endif %}
+          </nav>
+        </div>
+      </header>
+      {% block instanceheader %}
+      <header class="instance-header">
+        <div class="instance-header__row">
+          <div class="instance-header__title-unit">
+              <div class="instance-header__title">
+                <h1>
+                  {% if request.instance %}
+                    <a href="/">{% filter force_escape %}{% firstof request.instance.title request.instance.label %}{% endfilter %}</a>
+                    {% if request.is_user_instance %}
+                      <a class="instance-header__edit-instance" href="{% url 'instance-edit' %}">{% trans 'Edit' %}</a>
+                    {% endif %}
+                  {% else %}
+                    <a href="{{ BASE_URL }}">{% trans "SayIt" %}</a>
+                  {% endif %}
+                </h1>
+              </div>
+            {% if request.instance.description %}
+              <div class="instance-header__subtitle">
+                <p>
+                    {{ request.instance.description }}
+                  {% if instance_about_page %}
+                    <a href="/about">{% trans "More&hellip;" %}</a>
+                  {% endif %}
+                </p>
+              </div>
+            {% endif %}
+            </div>
+          <div class="instance-header__search-nav">
+            <nav class="primary-navigation-bar">
+
+                <span class="menu-dropdown"><a href="#" class="button menu-dropdown--button">{% trans "Menu" %}</a></span>
+                <ul class="nav-menu closed">
+                  {% if request.instance %}
+
+                    <li{% if request.path == '/' %} class="active"{% endif %}><a href="/">{% trans "Home" %}</a></li>
+                    <li{% if nav_primary == 'speakers' or nav_primary == 'speaker' %} class="active"{% endif %}><a href="{% url 'speeches:speaker-list' %}">{% trans "Speakers" %}</a></li>
+                    <li{% if nav_primary == 'speeches' or nav_primary == 'speech' or section_tree %} class="active"{% endif %}>
+
+                      {# Temporary hard-coding of instance labels while we work out the best way to decide where to link to #}
+                      {% if request.instance.label == 'conservative-speeches' or request.instance.label == 'labour-speeches'%}
+                        <a href="{% url 'speeches:parentless-list' %}">{% trans "Speeches" %}</a>
+                      {% elif instance_about_page %}
+                        <a href="/about">{% trans "Speeches" %}</a>
+                      {% else %}
+                        <a href="{% url 'speeches:parentless-list' %}">{% trans "Speeches" %}</a>
+                      {% endif %}
+                    </li>
+                  {% endif %}
+                </ul>
+            </nav>
+              <form class="site-search site-search--header" action="/search/" method="get" >
+                <div class="search-wrapper">
+                    <input type="search" class="site-search__input" placeholder="{% trans "Search" %}" name="q"/>
+                    <input type="submit" class="icon-search icon-search--white" value="{% trans "Go" %}"/>
+                </div>
+              </form>
+            </div>
+        </div>
+      </header>
+      {% endblock %}
+      {% if messages %}
+        <div class="full-page messages">
+          {% for message in messages %}
+            <div class="full-page__row alert alert-{{ message.tags }}">
+                <div class="full-page__unit">
+                    {{ message }}
+                </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% block fullpage %}
+        <div class="full-page">
+          <div class="full-page__row">
+            <div class="full-page__unit">
+                  {% block content %}{% endblock %}
+            </div>
+          </div>
+        </div>
+      {% endblock %}
+      {% if request.instance %}
+        <footer class="footer instance-footer">
+          <div class="instance-footer__row">
+            <div class="instance-footer__links">
+              <ul>
+                <li><a href="/" class="instance-title">{% filter force_escape %}{% firstof request.instance.title request.instance.label %}{% endfilter %}</a></li>
+                {% if instance_about_page %}
+                     <li><a href="/about">{% trans "About" %}</a></li>
+                  {% endif %}
+              </ul>
+            </div>
+          {% if request.path != '/speech/add' %}
+            <div class="instance-footer__top-link">
+              <a href="#top" class="button">{% trans "Back to top" %}</a>
+            </div>
+          {% endif %}
+          </div>
+        </footer>
+      {% endif %}
+        <footer class="footer brand-footer">
+          <div class="brand-footer__row">
+              <div class="about-sayit">
+                <h2>{% trans "SayIt" %}</h2>
+                <p>{% trans "An open source tool for making transcripts really easy to read, search and share on the modern web" %}</p>
+              </div>
+              <div class="footer-links">
+                <!--<div class="footer-links__column">
+                  <ul>
+                    <li><a href="https://www.mysociety.org/category/projects/sayit/">{% trans "Blog" %}</a></li>
+                    <li><a href="https://twitter.com/mySocietyIntl">{% trans "Twitter" %}</a></li>
+                    <li><a href="https://www.facebook.com/mySocietyInternational">{% trans "Facebook" %}</a></li>
+                    <li><a href="https://github.com/mysociety/sayit">{% trans "GitHub" %}</a></li>
+                  </ul>
+                </div>
+                <div class="footer-links__column">
+                  <ul>
+                    <li><a href="{{ BASE_URL }}/about/community">{% trans "Get involved" %}</a></li>
+                    <li><a href="{{ BASE_URL }}/about/questions">{% trans "Help" %}</a></li>
+                    <li><a href="{{ BASE_URL }}/about/developers">{% trans "Developers" %}</a></li>
+                    <li><a href="{{ BASE_URL }}/about/transcripts">{% trans "Transcripts" %}</a></li>
+                  </ul>
+                </div>
+                <div class="footer-links__column">
+                  <ul>
+                    <li><a href="http://leveson.sayit.mysociety.org">{% trans "The Leveson Inquiry" %}</a></li>
+                    <li><a href="http://charles-taylor.sayit.mysociety.org">{% trans "Charles Taylor Trial" %}</a></li>
+                    <li><a href="http://shakespeare.sayit.mysociety.org">{% trans "Plays of Shakespeare" %}</a></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="footer-logos">
+                <div class="footer-logos__column">
+                  <a href="http://mysociety.org" class="footer-logo footer-logo--mysociety">{% trans "mySociety" %}</a>
+                  <p>{% trans "A mySociety project" %}</p>
+                </div>
+                <div class="footer-logos__column">
+                  <a href="http://poplus.org/" class="footer-logo footer-logo--poplus">{% trans "Poplus" %}</a>
+                  <p>{% trans "A Poplus component" %}</p>
+                </div>
+              </div>-->
+          </div>
+        </footer>
+
+        {% compressed_js 'sayit-default' %}
+        {% block extra_js %}{% endblock %}
+
+		<script src="//devfiles-devtechillucent.rhcloud.com/wordcloud_JS/wordcloud.js"></script>
+        <script>
+        $( document ).ready(function() {
+            //$(".js-typewriter").typewriter();
+            $(".menu-dropdown").click(function() {
+              $(".nav-menu").toggleClass('closed');
+            });
+        });
+        </script>
+        <script>
+        $(function() {
+			$(document).foundation();
+		});
+        </script>
+		
+    </body>
+</html>

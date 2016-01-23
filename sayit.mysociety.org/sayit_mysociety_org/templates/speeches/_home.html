@@ -1,0 +1,116 @@
+{% extends 'speeches/base.html' %}
+{% load url from future %}
+{% load speech_i18n %}
+{% load humanize %}
+{% load speech_utils %}
+{% load staticfiles %}
+
+{% block title %}Home{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link href="{% static "speeches/css/extension.css" %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block extra_js %}
+
+{% endblock %}
+
+{% block content %}
+
+  {% if request.is_user_instance %}
+    <div class="page-header">
+      {% block user_instance_header %}
+        <a href="{% url "speeches:speech-add" %}" class="button small right">{% trans "Add a new speech" %}</a>
+        <a href="{% url "speeches:section-add" %}" class="button secondary small right">{% trans "Add a section" %}</a>
+        <a href="{% url 'speeches:import-popolo' %}" class="button secondary small right">{% trans "Import speakers" %}</a>
+        <a href="{% url 'speeches:import-akoma-ntoso' %}" class="button secondary small right">{% trans "Import speeches" %}</a>
+      {% endblock %}
+    </div>
+  {% endif %}
+
+  {% if paginator.count %}
+
+        <div class="page-content__row">
+          <!-- dev comment-->
+          <div class="homepage-search">
+              <h2>{% block instance_search_title %}{% trans 'Search speeches and statements' %}{% endblock %}</h2>
+              <form class="site-search site-search--homepage" action="{% url "speeches:haystack_search" %}" method="get" >
+                  <div class="search-wrapper">
+                      <input type="search" class="site-search__input" placeholder="{% trans 'Search' %}" name="q"/>
+                      <input type="submit" class="icon-search icon-search" value="{% trans 'Search' %}"/>
+                  </div>
+              </form>
+          </div>
+
+        </div>
+
+    </div>
+</div> <!-- closing off the opening tags in base so we can go full width here -->
+
+{% block after_search %}{% endblock %}
+
+<div class="homepage-stats">
+  
+  <div class="full-page__row">
+    
+    <div class="full-page__unit">
+      
+        {% url "speeches:speaker-list" as url_speaker_list %}
+        {% url "speeches:parentless-list" as url_parentless_list %}
+        {% if LANGUAGE_CODE == 'en' %}
+          <a href="{{ url_parentless_list }}"><strong>{{ count_speeches|intcomma }}</strong></a>
+          speech{{ count_speeches|pluralize:"es" }}{% if count_speakers %}, by
+          <a href="{{ url_speaker_list }}"><strong>{{ count_speakers|intcomma }}</strong></a>
+          speaker{{ count_speakers|pluralize }}{% endif %}{% if count_sections %}, in
+          <a href="{{ url_parentless_list }}"><strong>{{ count_sections|intcomma }}</strong></a>
+          section{{ count_sections|pluralize }}{% endif %}
+        {% else %}
+          {% blocktrans with n=count_speeches|intcomma count c=count_speeches trimmed %}
+            <a href="{{ url_parentless_list }}"><strong>1</strong></a> speech
+            {% plural %}
+            <a href="{{ url_parentless_list }}"><strong>{{ n }}</strong></a> speeches
+          {% endblocktrans %}{% if count_speakers %};
+          {% blocktrans with n=count_speakers|intcomma count c=count_speakers trimmed %}
+            <a href="{{ url_speaker_list }}"><strong>1</strong></a> speaker
+            {% plural %}
+            <a href="{{ url_speaker_list }}"><strong>{{ n }}</strong></a> speakers
+          {% endblocktrans %}{% endif %}{% if count_sections %};
+          {% blocktrans with n=count_sections|intcomma count c=count_sections trimmed %}
+            <a href="{{ url_parentless_list }}"><strong>1</strong></a> section
+            {% plural %}
+            <a href="{{ url_parentless_list }}"><strong>{{ n }}</strong></a> sections
+          {% endblocktrans %}{% endif %}
+        {% endif %}
+
+        {% block instance_blocks %}
+        {% endblock %}
+        
+       
+    </div>
+
+  {% else %}
+
+    <div class="nothing-here-yet-message">
+      
+      {% block nothing-here-yet %}
+        <h1>{% trans 'Brilliant!' %}</h1>
+        <p class="lead">{% trans 'Now you&rsquo;ve got your own public database for speeches and statements.' %}</p>
+        <p class="lead">{% trans 'However, it&rsquo;s totally empty. Let&rsquo;s get started by adding something.' %}</p>
+        <p>
+            <a href="{% url "speeches:speech-add" %}" class="button">{% trans 'Add your first statement' %}</a>
+            <a href="{% url "speeches:speaker-add" %}" class="button">{% trans 'Add your first speaker' %}</a>
+            <a href="{% url 'speeches:import-popolo' %}" class="button">{% trans "Import speakers" %}</a>
+        </p>
+      {% endblock %}
+      
+    </div>
+
+  {% endif %}
+          
+    <div class="wordcloud_wrapper">
+        <div class="wordcloud"></div>
+    </div>
+                              
+{% endblock %}
+
